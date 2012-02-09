@@ -7,7 +7,8 @@
  * @link http://github.com/MSeven/cakephp_queue
  */
 
-App::import('Model', 'Queue.QueuedTask');
+App::uses('AppModel', 'Model');
+App::uses('QueuedTask', 'Queue.Model');
 
 class TestQueuedTask extends QueuedTask {
 	public $name = 'TestQueuedTask';
@@ -36,8 +37,7 @@ class QueuedTaskTestCase extends CakeTestCase {
 	 * Initialize the Testcase
 	 *
 	 */
-	public function start() {
-		parent::start();
+	public function setUp() {
 		$this->QueuedTask = & ClassRegistry::init('TestQueuedTask');
 	}
 
@@ -56,27 +56,27 @@ class QueuedTaskTestCase extends CakeTestCase {
 		$this->assertEqual(0, $this->QueuedTask->getLength());
 		
 		// create a job
-		$this->assertTrue($this->QueuedTask->createJob('test1', array(
+		$this->assertTrue(is_array($this->QueuedTask->createJob('test1', array(
 			'some' => 'random',
 			'test' => 'data'
-		)));
+		))));
 		
 		// test if queue Length is 1 now.
 		$this->assertEqual(1, $this->QueuedTask->getLength());
 		
 		//create some more jobs
-		$this->assertTrue($this->QueuedTask->createJob('test2', array(
+		$this->assertTrue(is_array($this->QueuedTask->createJob('test2', array(
 			'some' => 'random',
 			'test' => 'data2'
-		)));
-		$this->assertTrue($this->QueuedTask->createJob('test2', array(
+		))));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('test2', array(
 			'some' => 'random',
 			'test' => 'data3'
-		)));
-		$this->assertTrue($this->QueuedTask->createJob('test3', array(
+		))));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('test3', array(
 			'some' => 'random',
 			'test' => 'data4'
-		)));
+		))));
 		
 		//overall queueLength shpould now be 4
 		$this->assertEqual(4, $this->QueuedTask->getLength());
@@ -111,7 +111,7 @@ class QueuedTaskTestCase extends CakeTestCase {
 		// there are no jobs, so we cant fetch any.
 		$this->assertFalse($this->QueuedTask->requestJob($capabilities));
 		// insert one job.
-		$this->assertTrue($this->QueuedTask->createJob('task1', $testData));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', $testData)));
 		
 		// fetch and check the first job.
 		$data = $this->QueuedTask->requestJob($capabilities);
@@ -122,7 +122,7 @@ class QueuedTaskTestCase extends CakeTestCase {
 		$this->assertEqual($testData, unserialize($data['data']));
 		
 		// after this job has been fetched, it may not be reassigned.
-		$this->assertEqual(array(), $this->QueuedTask->requestJob($capabilities));
+		$this->assertFalse($this->QueuedTask->requestJob($capabilities));
 		
 		// queue length is still 1 since the first job did not finish.
 		$this->assertEqual(1, $this->QueuedTask->getLength());
@@ -150,9 +150,9 @@ class QueuedTaskTestCase extends CakeTestCase {
 		$this->assertEqual(0, $this->QueuedTask->getLength());
 		// create some more jobs
 		foreach (range(0, 9) as $num) {
-			$this->assertTrue($this->QueuedTask->createJob('task1', array(
+			$this->assertTrue(is_array($this->QueuedTask->createJob('task1', array(
 				'tasknum' => $num
-			)));
+			))));
 		}
 		// 10 jobs in the queue.
 		$this->assertEqual(10, $this->QueuedTask->getLength());
@@ -184,9 +184,9 @@ class QueuedTaskTestCase extends CakeTestCase {
 	 * @return null
 	 */
 	public function testNotBefore() {
-		$this->assertTrue($this->QueuedTask->createJob('task1', null, '+ 1 Min'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', null, '+ 1 Day'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', null, '2009-07-01 12:00:00'));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', null, '+ 1 Min')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', null, '+ 1 Day')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', null, '2009-07-01 12:00:00')));
 		$data = $this->QueuedTask->find('all');
 		$this->assertEqual($data[0]['TestQueuedTask']['notbefore'], date('Y-m-d H:i:s', strtotime('+ 1 Min')));
 		$this->assertEqual($data[1]['TestQueuedTask']['notbefore'], date('Y-m-d H:i:s', strtotime('+ 1 Day')));
@@ -211,12 +211,12 @@ class QueuedTaskTestCase extends CakeTestCase {
 				'retries' => 2
 			)
 		);
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
 		// create a task with it's execution target some seconds in the past, so it should jump to the top of the list.
-		$this->assertTrue($this->QueuedTask->createJob('task1', 'three', '- 3 Seconds'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', 'two', '- 4 Seconds'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', 'one', '- 5 Seconds'));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 'three', '- 3 Seconds')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 'two', '- 4 Seconds')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 'one', '- 5 Seconds')));
 		
 		// when usin requestJob, the jobs we just created should be delivered in this order, NOT the order in which they where created.
 		$expected = array(
@@ -271,13 +271,13 @@ class QueuedTaskTestCase extends CakeTestCase {
 		// clear out the rate history
 		$this->QueuedTask->rateHistory = array();
 		
-		$this->assertTrue($this->QueuedTask->createJob('task1', '1'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', '2'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', '3'));
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
-		$this->assertTrue($this->QueuedTask->createJob('dummytask', null));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', '1')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', '2')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', '3')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('dummytask', null)));
 		
 		//At first we get task1-1.
 		$tmp = $this->QueuedTask->requestJob($capabilities);
@@ -335,7 +335,7 @@ class QueuedTaskTestCase extends CakeTestCase {
 			)
 		);
 		
-		$this->assertTrue($this->QueuedTask->createJob('task1', '1'));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', '1')));
 		$tmp = $this->QueuedTask->requestJob($capabilities);
 		$this->assertEqual($tmp['jobtype'], 'task1');
 		$this->assertEqual(unserialize($tmp['data']), '1');
@@ -359,9 +359,9 @@ class QueuedTaskTestCase extends CakeTestCase {
 		);
 		
 		// create an ungrouped task
-		$this->assertTrue($this->QueuedTask->createJob('task1', 1));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 1)));
 		//create a Grouped Task
-		$this->assertTrue($this->QueuedTask->createJob('task1', 2, null, 'testgroup'));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 2, null, 'testgroup')));
 		
 		// Fetching without group should completely ignore the Group field.
 		$tmp = $this->QueuedTask->requestJob($capabilities);
@@ -373,11 +373,11 @@ class QueuedTaskTestCase extends CakeTestCase {
 		
 		// well, lets tra that Again, while limiting by Group
 		// create an ungrouped task
-		$this->assertTrue($this->QueuedTask->createJob('task1', 3));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 3)));
 		//create a Grouped Task
-		$this->assertTrue($this->QueuedTask->createJob('task1', 4, null, 'testgroup', 'Job number 4'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', 5, null, null, 'Job number 5'));
-		$this->assertTrue($this->QueuedTask->createJob('task1', 6, null, 'testgroup', 'Job number 6'));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 4, null, 'testgroup', 'Job number 4')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 5, null, null, 'Job number 5')));
+		$this->assertTrue(is_array($this->QueuedTask->createJob('task1', 6, null, 'testgroup', 'Job number 6')));
 		
 		// we should only get tasks 4 and 6, in that order, when requesting inside the group
 		$tmp = $this->QueuedTask->requestJob($capabilities, 'testgroup');

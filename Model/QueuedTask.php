@@ -15,7 +15,7 @@ class QueuedTask extends AppModel {
 	
 	public $exit = false;
 	
-	public $_findMethods = array(
+	public $findMethods = array(
 		'progress' => true
 	);
 
