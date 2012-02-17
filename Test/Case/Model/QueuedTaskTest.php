@@ -8,6 +8,7 @@
  */
 
 App::uses('AppModel', 'Model');
+App::uses('Model', 'Model');
 App::uses('QueuedTask', 'Queue.Model');
 
 class TestQueuedTask extends QueuedTask {

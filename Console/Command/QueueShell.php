@@ -26,16 +26,13 @@ class queueShell extends Shell {
 	public function initialize() {
 		App::import('Folder');
 		$this->_loadModels();
-		
-		foreach ($this->Dispatch->shellPaths as $path) {
-			$folder = new Folder($path . DS . 'tasks');
-			$this->tasks = array_merge($this->tasks, $folder->find('queue_.*\.php'));
+
+		foreach (App::objects('Console/Command/Task') as $taskName) {
+			if (substr($taskName, 0, 5) == 'Queue') {
+				$this->tasks[] = substr($taskName, 0, -4);
+			}
 		}
-		// strip the extension fom the found task(file)s
-		foreach ($this->tasks as &$task) {
-			$task = basename($task, '.php');
-		}
-		
+
 		//Config can be overwritten via local app config.
 		Configure::load('queue');
 		
@@ -133,7 +130,7 @@ class queueShell extends Shell {
 			} else {
 				if ($data !== false) {
 					$this->out('Running Job of type "' . $data['jobtype'] . '"');
-					$taskname = 'queue_' . strtolower($data['jobtype']);
+					$taskname = Inflector::camelize('queue_' . strtolower($data['jobtype']));
 					$return = $this->{$taskname}->run(unserialize($data['data']));
 					if ($return == true) {
 						$this->QueuedTask->markJobDone($data['id']);
@@ -211,7 +208,7 @@ class queueShell extends Shell {
 		if (!is_array($this->taskConf)) {
 			$this->taskConf = array();
 			foreach ($this->tasks as $task) {
-				$this->taskConf[$task]['name'] = $task;
+				$this->taskConf[$task]['name'] = Inflector::underscore($task);
 				if (property_exists($this->{$task}, 'timeout')) {
 					$this->taskConf[$task]['timeout'] = $this->{$task}->timeout;
 				} else {
